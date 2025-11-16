@@ -6,6 +6,193 @@
 
 ---
 
+## Quick Reference
+
+**What you'll build**: Tools for programmatic world creation, terrain modification, object placement, and dynamic lighting
+
+**Tasks**: 35+ across 5 modules
+- Module 4.1: World File Management (5 tasks)
+- Module 4.2: Object Placement (10 tasks)
+- Module 4.3: Terrain Modification (6 tasks)
+- Module 4.4: Lighting Control (10 tasks)
+- Module 4.5: Live Updates (5 tasks)
+
+**Success criteria**: Can generate complete worlds, create obstacle courses, modify terrain, animate day/night cycles, and update worlds live
+
+**Verification**:
+```bash
+./verify_phase4.sh  # Automated verification
+pytest tests/integration/test_world_creation.py  # Integration test
+```
+
+**Key deliverables**:
+- ✅ Programmatic world file generation
+- ✅ Random obstacle course creation
+- ✅ Heightmap-based terrain
+- ✅ Material property system (grass, sand, ice, etc.)
+- ✅ Day/night lighting cycles
+- ✅ Live world manipulation during simulation
+
+---
+
+## Learning Objectives
+
+By completing this phase, you will understand:
+
+1. **SDF World Structure**
+   - How SDF world files are structured
+   - World physics configuration
+   - Scene and environment settings
+   - Model inclusion and referencing
+
+2. **Procedural Generation**
+   - How to generate random obstacle layouts
+   - Non-overlapping object placement algorithms
+   - Heightmap terrain generation
+   - Material property systems
+
+3. **Lighting Systems**
+   - Different light types (directional, point, spot)
+   - Ambient vs. direct lighting
+   - Shadow configuration
+   - Day/night cycle animation
+
+4. **Physics Properties**
+   - Surface friction and restitution
+   - Material properties for different surfaces
+   - How terrain affects robot navigation
+   - Force and torque application
+
+5. **Dynamic World Modification**
+   - How to update world state during simulation
+   - Live object spawning and deletion
+   - Real-time lighting changes
+   - Physics parameter updates
+
+---
+
+## Core Principles for This Phase
+
+### 1. Generate Valid SDF
+
+**Always validate SDF before spawning**:
+```python
+def validate_sdf(sdf_xml: str) -> bool:
+    """Validate SDF against schema"""
+    try:
+        tree = ET.fromstring(sdf_xml)
+        # Check required elements
+        assert tree.tag == 'sdf'
+        assert 'version' in tree.attrib
+        # More validation...
+        return True
+    except Exception as e:
+        raise SDFValidationError(f"Invalid SDF: {e}")
+```
+
+### 2. Use Templates for Consistency
+
+```python
+# Create template library
+WORLD_TEMPLATES = {
+    'empty': WorldTemplate.create_empty(),
+    'with_obstacles': WorldTemplate.create_with_obstacles(),
+    'outdoor': WorldTemplate.create_outdoor_terrain(),
+}
+
+# Use template
+world = WORLD_TEMPLATES['empty'].customize(
+    ground_plane=True,
+    sun_lighting=True
+)
+```
+
+### 3. Handle Procedural Generation Safely
+
+```python
+def generate_random_position(
+    existing_objects: List[Dict],
+    area_size: float,
+    min_distance: float
+) -> Tuple[float, float, float]:
+    """
+    Generate non-overlapping random position.
+
+    Includes maximum retry limit to prevent infinite loops.
+    """
+    max_retries = 1000
+    for attempt in range(max_retries):
+        pos = (
+            random.uniform(-area_size/2, area_size/2),
+            random.uniform(-area_size/2, area_size/2),
+            0.5  # Height
+        )
+
+        # Check distance to existing objects
+        if all(distance(pos, obj['pos']) >= min_distance
+               for obj in existing_objects):
+            return pos
+
+    raise GenerationError(
+        f"Could not find valid position after {max_retries} attempts. "
+        f"Try reducing num_obstacles or increasing area_size."
+    )
+```
+
+### 4. Provide Material Presets
+
+```python
+# Material property library
+MATERIAL_PROPERTIES = {
+    'grass': {
+        'friction': 0.8,
+        'restitution': 0.1,  # Low bounce
+        'color': (0.2, 0.8, 0.2, 1.0),
+        'description': 'Natural grass surface'
+    },
+    'concrete': {
+        'friction': 1.0,
+        'restitution': 0.01,  # Very low bounce
+        'color': (0.5, 0.5, 0.5, 1.0),
+        'description': 'Hard concrete surface'
+    },
+    'ice': {
+        'friction': 0.1,
+        'restitution': 0.9,  # High bounce
+        'color': (0.8, 0.9, 1.0, 0.7),
+        'description': 'Slippery ice surface'
+    },
+    # ... more materials
+}
+```
+
+### 5. Test with Real Navigation
+
+**Always test terrain with actual robot navigation**:
+```python
+@pytest.mark.integration
+async def test_terrain_affects_navigation():
+    """Verify different surfaces affect robot movement"""
+
+    # Create world with grass
+    await create_world_with_surface('grass')
+    robot = await spawn_turtlebot3()
+
+    # Measure movement on grass
+    grass_distance = await measure_movement(robot, duration=5.0)
+
+    # Change surface to ice
+    await set_surface_type('ice')
+
+    # Measure movement on ice (should be different)
+    ice_distance = await measure_movement(robot, duration=5.0)
+
+    # Verify surfaces have different effects
+    assert abs(grass_distance - ice_distance) > 0.1
+```
+
+---
+
 ## Overview
 
 Implement tools for dynamic world generation and manipulation, including object placement, terrain modification, lighting control, and live updates during simulation.
@@ -510,24 +697,327 @@ async def apply_force(
 
 ---
 
+## SDF World Template Structure
+
+### Complete World Template
+
+**Essential for understanding world generation**:
+
+```xml
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <world name="custom_world">
+
+    <!-- Physics Configuration -->
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000.0</real_time_update_rate>
+      <gravity>0 0 -9.8</gravity>
+    </physics>
+
+    <!-- Scene Settings -->
+    <scene>
+      <ambient>0.4 0.4 0.4 1.0</ambient>
+      <background>0.7 0.7 0.7 1.0</background>
+      <shadows>true</shadows>
+      <grid>false</grid>
+    </scene>
+
+    <!-- Ground Plane -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>0.8</mu>  <!-- Friction coefficient -->
+                <mu2>0.8</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.2 0.8 0.2 1</ambient>  <!-- Green grass -->
+            <diffuse>0.2 0.8 0.2 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Sun (Directional Light) -->
+    <light name="sun" type="directional">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>1.0 1.0 1.0 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+    </light>
+
+  </world>
+</sdf>
+```
+
+### Primitive Object Templates
+
+**Box obstacle**:
+```xml
+<model name="box_obstacle">
+  <static>true</static>
+  <pose>0 0 0.5 0 0 0</pose>  <!-- x y z roll pitch yaw -->
+  <link name="link">
+    <collision name="collision">
+      <geometry>
+        <box>
+          <size>1 1 1</size>  <!-- width depth height -->
+        </box>
+      </geometry>
+    </collision>
+    <visual name="visual">
+      <geometry>
+        <box>
+          <size>1 1 1</size>
+        </box>
+      </geometry>
+      <material>
+        <ambient>0.8 0.1 0.1 1</ambient>  <!-- Red -->
+        <diffuse>0.8 0.1 0.1 1</diffuse>
+      </material>
+    </visual>
+  </link>
+</model>
+```
+
+**Cylinder obstacle**:
+```xml
+<model name="cylinder_obstacle">
+  <static>true</static>
+  <pose>0 0 0.5 0 0 0</pose>
+  <link name="link">
+    <collision name="collision">
+      <geometry>
+        <cylinder>
+          <radius>0.5</radius>
+          <length>1.0</length>
+        </cylinder>
+      </geometry>
+    </collision>
+    <visual name="visual">
+      <geometry>
+        <cylinder>
+          <radius>0.5</radius>
+          <length>1.0</length>
+        </cylinder>
+      </geometry>
+      <material>
+        <ambient>0.1 0.1 0.8 1</ambient>  <!-- Blue -->
+        <diffuse>0.1 0.1 0.8 1</diffuse>
+      </material>
+    </visual>
+  </link>
+</model>
+```
+
+### Heightmap Terrain Template
+
+```xml
+<model name="heightmap_terrain">
+  <static>true</static>
+  <link name="link">
+    <collision name="collision">
+      <geometry>
+        <heightmap>
+          <uri>file://path/to/heightmap.png</uri>
+          <size>100 100 10</size>  <!-- x y z (max elevation) -->
+          <pos>0 0 0</pos>
+        </heightmap>
+      </geometry>
+    </collision>
+    <visual name="visual">
+      <geometry>
+        <heightmap>
+          <uri>file://path/to/heightmap.png</uri>
+          <size>100 100 10</size>
+          <texture>
+            <diffuse>file://media/materials/textures/dirt.jpg</diffuse>
+            <normal>file://media/materials/textures/dirt_normal.jpg</normal>
+            <size>10</size>
+          </texture>
+        </heightmap>
+      </geometry>
+    </visual>
+  </link>
+</model>
+```
+
+---
+
 ## Success Criteria
 
-Phase 4 is complete when:
+### Automated Verification ✅
 
-- [ ] All 25+ tasks implemented
-- [ ] Can generate complete worlds programmatically
-- [ ] Obstacle courses work correctly
-- [ ] Terrain and heightmaps functional
-- [ ] Day/night cycles animate properly
-- [ ] Live updates work during simulation
-- [ ] All tests pass (>80% coverage)
-- [ ] Documentation complete
+Run verification script:
+```bash
+./verify_phase4.sh
+```
+
+This checks:
+- [ ] All 35+ tasks implemented with tests
+- [ ] >80% code coverage for phase 4 modules
+- [ ] Type checking passes (mypy --strict)
+- [ ] Linting passes (ruff, black)
+- [ ] SDF validation works correctly
+
+### Manual Verification Checklist ✅
+
+**World Generation**:
+- [ ] Can create empty world programmatically
+- [ ] Can load existing .world files
+- [ ] Can save generated worlds to disk
+- [ ] World templates work correctly
+- [ ] Generated SDF validates successfully
+
+**Object Placement**:
+- [ ] Can place static objects (box, sphere, cylinder)
+- [ ] Can place dynamic objects with physics
+- [ ] Can generate random obstacle courses
+- [ ] Objects don't overlap (collision detection works)
+- [ ] Can place objects in grid patterns
+- [ ] Custom mesh models can be loaded
+
+**Terrain Modification**:
+- [ ] Can set ground plane material properties
+- [ ] Can create heightmap terrain from images
+- [ ] Can modify surface types (grass, sand, ice, etc.)
+- [ ] Different surfaces have correct friction values
+- [ ] Terrain affects robot navigation correctly
+
+**Lighting Control**:
+- [ ] Can set ambient light levels
+- [ ] Can add directional lights (sun)
+- [ ] Can add point lights
+- [ ] Can add spotlights
+- [ ] Can remove/modify lights
+- [ ] Day/night cycle animates smoothly
+- [ ] Lighting presets (sunrise, noon, sunset, night) work
+- [ ] Shadows render correctly
+
+**Live Updates**:
+- [ ] Can spawn objects during simulation
+- [ ] Can delete objects during simulation
+- [ ] Can modify object properties on-the-fly
+- [ ] Can apply forces and torques
+- [ ] Can change lighting in real-time
+- [ ] World state remains consistent
+
+### Integration Tests ✅
+
+Run with real Gazebo:
+```bash
+# Start Gazebo
+gz sim -s &
+
+# Run integration tests
+pytest tests/integration/test_world_creation.py -v
+pytest tests/integration/test_obstacle_course.py -v
+pytest tests/integration/test_day_night_cycle.py -v
+```
+
+Must pass:
+- [ ] `test_complete_world_generation` - End-to-end world creation
+- [ ] `test_obstacle_course_navigation` - Robot navigates obstacles
+- [ ] `test_terrain_variations` - Different surfaces work
+- [ ] `test_day_night_animation` - Lighting cycle functions
+- [ ] `test_live_world_updates` - Real-time modifications work
+
+### Code Quality Standards ✅
+
+**CRITICAL**: All code must meet these standards:
+
+- [ ] **Type Hints**: Every function fully typed
+  ```python
+  def create_heightmap(image: str, scale: float) -> Dict[str, Any]:
+  ```
+
+- [ ] **SDF Validation**: All generated SDF validated before use
+  ```python
+  sdf = generate_world_sdf(...)
+  validate_sdf(sdf)  # Must pass
+  ```
+
+- [ ] **Error Handling**: Procedural generation handles edge cases
+- [ ] **Templates**: Reusable templates for common patterns
+- [ ] **Documentation**: SDF structure documented
+- [ ] **Tests**: >80% coverage including integration tests
+
+### Documentation ✅
+
+- [ ] All tools documented in API reference
+- [ ] SDF templates documented with examples
+- [ ] Material properties reference complete
+- [ ] Heightmap creation guide written
+- [ ] Lighting system explained
+- [ ] World building best practices documented
+
+### Performance Targets ✅
+
+| Operation | Target | Actual |
+|-----------|--------|--------|
+| Create empty world | < 1s | ___ |
+| Generate obstacle course | < 5s | ___ |
+| Create heightmap terrain | < 3s | ___ |
+| Apply lighting changes | < 200ms | ___ |
+| Live object spawn | < 500ms | ___ |
 
 ---
 
 ## Next Phase
 
-Proceed to **Phase 5: Testing, Documentation & Examples**
+Once all success criteria are met, proceed to:
+**Phase 5: Testing, Documentation & Examples**
+
+---
+
+## Best Practices Summary
+
+**DO** ✅:
+- Validate all generated SDF before spawning
+- Use templates for consistency
+- Test with real robot navigation
+- Provide material property presets
+- Limit procedural generation retries
+- Document SDF structure thoroughly
+- Test day/night cycles visually
+
+**DON'T** ❌:
+- Generate invalid SDF
+- Allow infinite loops in random placement
+- Hardcode material properties
+- Skip SDF validation
+- Ignore terrain physics effects
+- Create overlapping objects
+- Forget to test lighting animations
 
 ---
 

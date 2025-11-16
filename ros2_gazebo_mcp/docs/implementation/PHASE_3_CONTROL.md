@@ -6,6 +6,155 @@
 
 ---
 
+## Quick Reference
+
+**What you'll build**: MCP tools for Gazebo simulation control, model management, sensor access, and robot control
+
+**Tasks**: 30 across 4 modules
+- Module 3.1: Simulation Control (6 tools)
+- Module 3.2: Model Management (8 tools)
+- Module 3.3: Sensor Integration (8 tools)
+- Module 3.4: Robot Control (6 tools)
+
+**Success criteria**: Can spawn TurtleBot3, read all sensor types, control movement, manage simulation lifecycle
+
+**Verification**:
+```bash
+./verify_phase3.sh  # Automated verification
+pytest tests/integration/test_turtlebot3_spawn.py  # Integration test
+```
+
+**Key deliverables**:
+- ✅ Full simulation control (start, stop, pause, reset)
+- ✅ TurtleBot3 spawning and management
+- ✅ Multi-sensor data access (camera, lidar, IMU, GPS)
+- ✅ Robot velocity and joint control
+- ✅ Integration tests with real Gazebo
+
+---
+
+## Learning Objectives
+
+By completing this phase, you will understand:
+
+1. **Gazebo Process Management**
+   - How to launch and manage Gazebo subprocess
+   - Graceful shutdown and cleanup
+   - Port and resource management
+
+2. **ROS2 Service Interaction**
+   - How to discover and call Gazebo services
+   - Service timeout and retry handling
+   - Service availability waiting
+
+3. **Sensor Data Processing**
+   - How to subscribe to ROS2 sensor topics
+   - Message type handling (Image, LaserScan, Imu)
+   - Data format conversion and validation
+
+4. **Model Lifecycle Management**
+   - How to spawn models from SDF/URDF
+   - Model state querying and setting
+   - TurtleBot3 model integration
+
+5. **Real-time Robot Control**
+   - How to publish velocity commands
+   - Joint control and state management
+   - Safety limits and validation
+
+---
+
+## Core Principles for This Phase
+
+### 1. Gather → Act → Verify → Repeat
+
+**Gather Context**:
+- Read module documentation completely
+- Review Gazebo and ROS2 service APIs
+- Check existing sensor message formats
+- Study TurtleBot3 model structure
+
+**Act (Implement)**:
+- Write tests FIRST for each tool
+- Implement tool with full type hints
+- Add comprehensive error handling
+- Document sensor data formats
+
+**Verify (Critical)**:
+- Unit tests pass for each tool
+- Integration tests with real Gazebo pass
+- Type checking passes (mypy --strict)
+- Manual testing with TurtleBot3
+
+**Repeat**:
+- Iterate on failing tests
+- Refine error messages
+- Optimize performance
+- Commit when green
+
+### 2. Write Tests First (TDD)
+
+```python
+# ALWAYS start with the test
+def test_spawn_turtlebot3():
+    """Test TurtleBot3 spawning"""
+    result = await spawn_model(
+        model_name="test_robot",
+        model_type="turtlebot3_burger",
+        x=0.0, y=0.0, z=0.1
+    )
+    assert result['success'] == True
+    assert result['model_name'] == "test_robot"
+
+# THEN implement
+async def spawn_model(...):
+    # Implementation
+```
+
+### 3. Handle Gazebo-Specific Errors
+
+Common issues to handle:
+- Gazebo not running → Clear error with instructions
+- Service timeout → Retry with exponential backoff
+- Model already exists → Descriptive error
+- Invalid SDF → Validation before spawning
+- Sensor topic not available → Wait or fail gracefully
+
+### 4. Validate All Inputs
+
+```python
+# Example validation
+def validate_spawn_parameters(model_name: str, x: float, y: float, z: float):
+    """Validate spawn parameters"""
+    if not model_name or not model_name.strip():
+        raise ValidationError("model_name cannot be empty")
+
+    if not (-100 <= x <= 100 and -100 <= y <= 100):
+        raise ValidationError(
+            f"Position out of bounds: x={x}, y={y}. "
+            f"Valid range: -100 to 100 meters"
+        )
+
+    if z < 0:
+        raise ValidationError(f"Height z={z} cannot be negative")
+```
+
+### 5. Provide Actionable Errors
+
+```python
+# ❌ Bad
+raise Exception("Failed to spawn")
+
+# ✅ Good
+raise ModelSpawnError(
+    f"Failed to spawn model '{model_name}'. "
+    f"Gazebo service '/spawn_entity' not available. "
+    f"Ensure Gazebo is running with: gz sim -s"
+)
+```
+
+---
+
 ## Overview
 
 Implement MCP tools for controlling Gazebo simulations, managing models (especially TurtleBot3), accessing sensors, and controlling robots.
@@ -314,23 +463,352 @@ async def send_velocity_command(
 
 ---
 
+## Subprocess Management Details
+
+### Gazebo Launcher Implementation
+
+**Critical for Module 3.1**: Managing Gazebo as a subprocess
+
+```python
+import subprocess
+import signal
+import os
+import time
+from typing import Optional
+
+class GazeboLauncher:
+    """Manage Gazebo process lifecycle"""
+
+    def __init__(self):
+        self.process: Optional[subprocess.Popen] = None
+        self.is_running = False
+
+    def launch(
+        self,
+        world_file: Optional[str] = None,
+        gui: bool = True,
+        verbose: bool = False
+    ) -> None:
+        """
+        Launch Gazebo with specified world file.
+
+        Args:
+            world_file: Path to .world file (None for empty world)
+            gui: Launch with GUI
+            verbose: Enable verbose logging
+        """
+        if self.is_running:
+            raise GazeboError("Gazebo is already running")
+
+        # Build command
+        cmd = ['gz', 'sim']
+
+        if not gui:
+            cmd.append('--headless')
+
+        if verbose:
+            cmd.append('--verbose')
+
+        if world_file:
+            cmd.append(world_file)
+
+        # Launch with process group for clean shutdown
+        self.process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            preexec_fn=os.setsid  # Create new process group
+        )
+
+        # Wait for Gazebo to be ready (check for ROS2 topics)
+        self._wait_for_ready(timeout=10.0)
+        self.is_running = True
+
+    def _wait_for_ready(self, timeout: float = 10.0) -> None:
+        """Wait for Gazebo services to be available"""
+        import rclpy
+        from rclpy.node import Node
+
+        start_time = time.time()
+        while (time.time() - start_time) < timeout:
+            # Check if Gazebo services are available
+            # This is a simplified check - actual implementation should verify
+            # specific services like /spawn_entity
+            if self._check_services_available():
+                return
+            time.sleep(0.5)
+
+        raise TimeoutError(
+            f"Gazebo did not become ready within {timeout} seconds. "
+            f"Check Gazebo logs for errors."
+        )
+
+    def shutdown(self, timeout: float = 10.0) -> None:
+        """
+        Gracefully shutdown Gazebo.
+
+        Args:
+            timeout: Max time to wait for shutdown (seconds)
+        """
+        if not self.is_running or not self.process:
+            return
+
+        try:
+            # Send SIGINT for graceful shutdown
+            os.killpg(os.getpgid(self.process.pid), signal.SIGINT)
+
+            # Wait for process to exit
+            self.process.wait(timeout=timeout)
+
+        except subprocess.TimeoutExpired:
+            # Force kill if graceful shutdown failed
+            os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+            self.process.wait(timeout=5.0)
+
+        finally:
+            self.is_running = False
+            self.process = None
+
+    def is_alive(self) -> bool:
+        """Check if Gazebo process is still running"""
+        if not self.process:
+            return False
+        return self.process.poll() is None
+```
+
+### Service Discovery and Waiting
+
+**Pattern for waiting on Gazebo services**:
+
+```python
+async def wait_for_service(
+    node: Node,
+    service_name: str,
+    timeout: float = 10.0
+) -> bool:
+    """
+    Wait for ROS2 service to become available.
+
+    Args:
+        node: ROS2 node instance
+        service_name: Service name (e.g., '/spawn_entity')
+        timeout: Maximum wait time
+
+    Returns:
+        True if service available, False if timeout
+    """
+    from rclpy.client import Client
+    from gazebo_msgs.srv import SpawnEntity
+
+    client = node.create_client(SpawnEntity, service_name)
+
+    start_time = time.time()
+    while (time.time() - start_time) < timeout:
+        if client.service_is_ready():
+            return True
+        await asyncio.sleep(0.1)
+
+    return False
+```
+
+---
+
+## Sensor Data Format Reference
+
+### Camera (RGB)
+**Topic**: `/{robot_name}/camera/image_raw`
+**Type**: `sensor_msgs/msg/Image`
+
+```python
+{
+    'width': 640,
+    'height': 480,
+    'encoding': 'rgb8',  # or 'bgr8'
+    'data': bytes,  # width × height × 3 bytes
+}
+```
+
+### LiDAR (LaserScan)
+**Topic**: `/{robot_name}/scan`
+**Type**: `sensor_msgs/msg/LaserScan`
+
+```python
+{
+    'angle_min': -3.14,  # radians
+    'angle_max': 3.14,
+    'angle_increment': 0.0175,  # ~1 degree
+    'range_min': 0.12,  # meters
+    'range_max': 3.5,
+    'ranges': [1.2, 1.3, ...],  # array of distances
+    'intensities': [0.8, 0.9, ...]  # optional
+}
+```
+
+### IMU
+**Topic**: `/{robot_name}/imu`
+**Type**: `sensor_msgs/msg/Imu`
+
+```python
+{
+    'orientation': {'x': 0.0, 'y': 0.0, 'z': 0.0, 'w': 1.0},
+    'angular_velocity': {'x': 0.0, 'y': 0.0, 'z': 0.0},  # rad/s
+    'linear_acceleration': {'x': 0.0, 'y': 0.0, 'z': 9.8}  # m/s²
+}
+```
+
+### GPS
+**Topic**: `/{robot_name}/gps`
+**Type**: `sensor_msgs/msg/NavSatFix`
+
+```python
+{
+    'latitude': 37.7749,  # degrees
+    'longitude': -122.4194,
+    'altitude': 100.0,  # meters
+    'status': 0  # 0=no fix, 1=fix, 2=SBAS fix
+}
+```
+
+---
+
 ## Success Criteria
 
-Phase 3 is complete when:
+### Automated Verification ✅
 
-- [ ] All 30 tasks implemented
-- [ ] TurtleBot3 can be spawned and controlled
-- [ ] Sensor data can be read from all sensor types
-- [ ] Simulation can be controlled (pause, reset, etc.)
-- [ ] All tests pass (>80% coverage)
-- [ ] Integration tests with real Gazebo pass
-- [ ] Documentation complete
+Run verification script:
+```bash
+./verify_phase3.sh
+```
+
+This checks:
+- [ ] All 30 tasks implemented with tests
+- [ ] >80% code coverage for phase 3 modules
+- [ ] Type checking passes (mypy --strict)
+- [ ] Linting passes (ruff, black)
+- [ ] No critical security issues
+
+### Manual Verification Checklist ✅
+
+**Simulation Control**:
+- [ ] Can start Gazebo with empty world
+- [ ] Can pause and unpause simulation
+- [ ] Can reset simulation to initial state
+- [ ] Can stop Gazebo gracefully
+- [ ] Can configure physics properties
+
+**Model Management**:
+- [ ] Can spawn TurtleBot3 Burger at specified position
+- [ ] Can spawn TurtleBot3 Waffle with camera
+- [ ] Can query list of active models
+- [ ] Can get model state (position, velocity)
+- [ ] Can set model state programmatically
+- [ ] Can delete spawned models
+
+**Sensor Access**:
+- [ ] Can read camera RGB images
+- [ ] Can read LiDAR scan data
+- [ ] Can read IMU data (accel, gyro, orientation)
+- [ ] Can read GPS coordinates
+- [ ] All sensor data formats are correct
+- [ ] Sensor timeout handling works
+
+**Robot Control**:
+- [ ] Can send linear velocity commands
+- [ ] Can send angular velocity commands
+- [ ] Can control individual joints
+- [ ] Can read joint states
+- [ ] Velocity limits are enforced
+
+### Integration Tests ✅
+
+Run with real Gazebo:
+```bash
+# Start Gazebo first
+gz sim -s &
+
+# Run integration tests
+pytest tests/integration/test_turtlebot3_spawn.py -v
+pytest tests/integration/test_sensor_access.py -v
+```
+
+Must pass:
+- [ ] `test_spawn_and_control_turtlebot3` - Full workflow
+- [ ] `test_read_all_sensors` - All sensor types
+- [ ] `test_pause_and_reset` - Simulation control
+- [ ] `test_multiple_models` - Multi-robot scenario
+
+### Code Quality Standards ✅
+
+**CRITICAL**: All code must meet these standards:
+
+- [ ] **Type Hints**: Every function fully typed
+  ```python
+  def spawn_model(model_name: str, x: float) -> Dict[str, Any]:
+  ```
+
+- [ ] **Docstrings**: All public functions documented
+  ```python
+  """
+  Spawn model in Gazebo.
+
+  Args:
+      model_name: Unique identifier for model
+
+  Returns:
+      Success status and model info
+  """
+  ```
+
+- [ ] **Error Handling**: All failures handled gracefully
+- [ ] **Tests**: >80% coverage, TDD approach
+- [ ] **Validation**: All inputs validated
+- [ ] **Logging**: Appropriate log levels used
+
+### Documentation ✅
+
+- [ ] All tools documented in API reference
+- [ ] Sensor data formats documented
+- [ ] TurtleBot3 usage examples added
+- [ ] Subprocess management guide complete
+- [ ] Troubleshooting section updated
+
+### Performance Targets ✅
+
+| Operation | Target | Actual |
+|-----------|--------|--------|
+| Spawn model | < 500ms | ___ |
+| Get sensor data | < 50ms | ___ |
+| Send velocity cmd | < 100ms | ___ |
+| Service call | < 200ms | ___ |
 
 ---
 
 ## Next Phase
 
-Proceed to **Phase 4: World Generation & Manipulation**
+Once all success criteria are met, proceed to:
+**Phase 4: World Generation & Manipulation**
+
+---
+
+## Best Practices Summary
+
+**DO** ✅:
+- Write tests before implementation
+- Validate all inputs thoroughly
+- Handle Gazebo process lifecycle carefully
+- Wait for services before calling
+- Provide actionable error messages
+- Document sensor data formats
+- Test with real Gazebo regularly
+
+**DON'T** ❌:
+- Skip subprocess cleanup
+- Ignore service timeouts
+- Assume Gazebo is always running
+- Use generic error messages
+- Hardcode topic names
+- Skip integration tests
+- Leave zombie processes
 
 ---
 
