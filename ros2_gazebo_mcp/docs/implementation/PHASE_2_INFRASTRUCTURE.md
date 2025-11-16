@@ -1,8 +1,17 @@
 # Phase 2: Core MCP Server Infrastructure
 
-**Status**: 🔵 Not Started
-**Estimated Duration**: 2-3 days
-**Prerequisites**: Phase 1 Complete ✅
+> **IMPORTANT**: This phase builds the foundation. Don't skip ahead - everything else depends on this.
+
+**Status**: 🔵 Not Started | **Duration**: 2-3 days | **Prerequisites**: Phase 1 ✅
+
+---
+
+## Quick Reference
+
+**What you'll build**: Core server infrastructure enabling AI ↔ Gazebo communication
+**Tasks**: 15 across 3 modules
+**Success criteria**: Server starts, connects to ROS2, passes health checks
+**Verification**: `pytest tests/ -v --cov=gazebo_mcp` must pass
 
 ---
 
@@ -10,13 +19,39 @@
 
 Build the foundational MCP server and ROS2 bridge infrastructure. This phase establishes the core communication layer between AI assistants and Gazebo.
 
-## Objectives
+### Learning Objectives
 
-1. Create working MCP server that accepts tool calls
-2. Implement ROS2 bridge node for Gazebo communication
-3. Build connection management with lifecycle handling
-4. Establish logging and error handling infrastructure
-5. Create base utilities for validation and conversion
+By completing this phase, you will understand:
+1. How MCP servers initialize and handle tool calls
+2. How to manage ROS2 node lifecycle safely
+3. How to implement robust connection management
+4. How to structure error handling for async systems
+5. How to write maintainable, testable infrastructure code
+
+### Core Principles for This Phase
+
+**CRITICAL**: Follow these patterns throughout:
+
+1. **Write Tests First** (TDD)
+   - Write failing test → Implement → Verify → Refactor
+   - Every function needs a corresponding test
+   - Aim for >80% coverage
+
+2. **Follow Gather→Act→Verify Loop**
+   - Gather: Read this doc section + related code
+   - Act: Implement with types and docs
+   - Verify: Run tests, linting, type check
+   - Repeat until all green
+
+3. **Type Everything**
+   - All function signatures fully typed
+   - Use `mypy --strict` for validation
+   - No `Any` types unless absolutely necessary
+
+4. **Handle All Errors**
+   - Every external call wrapped in try/except
+   - Specific exception types (not bare Exception)
+   - Actionable error messages
 
 ---
 
@@ -722,19 +757,45 @@ ros2:
 
 ---
 
-## Success Criteria
+## Success Criteria (Verify Before Phase 3)
 
-Phase 2 is complete when:
+**CRITICAL**: All must pass. Don't proceed until everything is green.
 
-- [x] All utilities implemented and tested
-- [x] Connection manager working with lifecycle
-- [x] ROS2 bridge node connects to Gazebo
-- [x] MCP server starts and accepts connections
-- [x] Health checks pass
-- [x] All unit tests pass (>80% coverage)
-- [x] Integration test with mock Gazebo passes
-- [x] Configuration files created
-- [x] Documentation updated
+### Automated Verification
+```bash
+# Run this command - everything must pass
+./verify_phase2.sh
+
+# Or manually:
+pytest tests/ -v --cov=gazebo_mcp --cov-report=term-missing
+mypy src/gazebo_mcp --strict
+ruff check src/ tests/
+black src/ tests/ --check
+```
+
+### Manual Verification Checklist
+
+- [ ] **Server Starts**: `python -m gazebo_mcp.server` runs without errors
+- [ ] **ROS2 Connection**: `ros2 node list` shows `gazebo_mcp_bridge`
+- [ ] **Health Check**: MCP client receives health status
+- [ ] **Reconnection**: Survives `ros2 daemon stop && ros2 daemon start`
+- [ ] **Error Handling**: Invalid requests return actionable errors
+- [ ] **Logging**: Logs appear in console and file (if configured)
+- [ ] **Tests Pass**: >80% coverage, all tests green
+- [ ] **Type Check**: `mypy` passes with no errors
+- [ ] **Linting**: `ruff` and `black` pass
+
+### Code Review Checklist
+
+- [ ] All functions have type hints
+- [ ] All public functions have docstrings
+- [ ] Exception messages are actionable
+- [ ] No hardcoded values (use config)
+- [ ] Resource cleanup in finally blocks
+- [ ] Thread safety for shared state
+- [ ] Configuration files validated
+
+**If any item fails**: Fix it before proceeding. Quality now = fewer bugs later.
 
 ---
 

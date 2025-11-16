@@ -1,104 +1,104 @@
 # ROS2 Gazebo MCP Server - Implementation Plan
 
-**Project Start Date**: 2024-11-16
-**Current Phase**: Phase 1 (Setup & Architecture) ✅
-**Overall Status**: 🟢 On Track
+> **IMPORTANT**: This is a living document. Update progress as you complete tasks. Use checkboxes to track completion.
+
+**Project Start**: 2024-11-16 | **Current Phase**: Phase 1 ✅ | **Status**: 🟢 On Track
 
 ---
 
-## Quick Status Overview
+## At a Glance
 
-| Phase | Status | Progress | Start Date | End Date |
-|-------|--------|----------|------------|----------|
-| Phase 1: Setup & Architecture | ✅ Complete | 100% | 2024-11-16 | 2024-11-16 |
-| Phase 2: Core Infrastructure | 🔵 Not Started | 0% | - | - |
-| Phase 3: Gazebo Control | 🔵 Not Started | 0% | - | - |
-| Phase 4: World Generation | 🔵 Not Started | 0% | - | - |
-| Phase 5: Testing & Polish | 🔵 Not Started | 0% | - | - |
+| Phase | Status | Progress | Duration |
+|-------|--------|----------|----------|
+| 1: Setup & Architecture | ✅ Complete | 100% | ~3 hours |
+| 2: Core Infrastructure | 🔵 Not Started | 0% | 2-3 days |
+| 3: Gazebo Control | 🔵 Not Started | 0% | 5-7 days |
+| 4: World Generation | 🔵 Not Started | 0% | 5-7 days |
+| 5: Testing & Polish | 🔵 Not Started | 0% | 3-4 days |
 
-**Legend**: ✅ Complete | 🟢 In Progress | 🔵 Not Started | 🔴 Blocked | ⚠️ Issues
+**Total Estimated Time**: 3-4 weeks
 
 ---
 
-## Phase Documents
+## Phase Documents (Progressive Disclosure)
 
-Detailed implementation instructions for each phase:
+**CRITICAL**: Read phase documents sequentially. Each builds on the previous phase.
 
-- **[Phase 1: Project Setup & Architecture](docs/implementation/PHASE_1_SETUP.md)** ✅
-- **[Phase 2: Core MCP Server Infrastructure](docs/implementation/PHASE_2_INFRASTRUCTURE.md)**
-- **[Phase 3: Gazebo Connection & Control Tools](docs/implementation/PHASE_3_CONTROL.md)**
-- **[Phase 4: World Generation & Manipulation](docs/implementation/PHASE_4_WORLD_GEN.md)**
-- **[Phase 5: Testing, Documentation & Examples](docs/implementation/PHASE_5_TESTING.md)**
+### Implementation Guides
+- **[Phase 1: Setup](docs/implementation/PHASE_1_SETUP.md)** ✅ Complete
+- **[Phase 2: Infrastructure](docs/implementation/PHASE_2_INFRASTRUCTURE.md)** ← Start here next
+- **[Phase 3: Control Tools](docs/implementation/PHASE_3_CONTROL.md)**
+- **[Phase 4: World Generation](docs/implementation/PHASE_4_WORLD_GEN.md)**
+- **[Phase 5: Testing](docs/implementation/PHASE_5_TESTING.md)**
+
+### Quick Reference
+Each phase document contains:
+1. **Overview** - What you'll build
+2. **Tasks** - Detailed checklist with code examples
+3. **Success Criteria** - How to verify completion
+4. **Next Steps** - How to proceed
 
 ---
 
 ## Current Phase: Phase 1 ✅ COMPLETE
 
-### Completed Tasks
+**Completed**: 2024-11-16 | **Time**: ~3 hours | **Files Created**: 10
 
-- [x] Create project directory structure
-- [x] Set up Python package configuration (pyproject.toml)
-- [x] Create requirements.txt with all dependencies
-- [x] Create ROS2 package.xml
-- [x] Create architecture design document
-- [x] Create README.md with project overview
-- [x] Reorganize into ros2_gazebo_mcp/ folder
-- [x] Commit and push Phase 1 setup
-
-### Deliverables
-
-- ✅ Project structure with all directories
-- ✅ Python package configuration (pyproject.toml)
-- ✅ Dependencies defined (requirements.txt, requirements-dev.txt)
-- ✅ ROS2 package manifest (package.xml)
-- ✅ Architecture documentation (docs/ARCHITECTURE.md)
-- ✅ Comprehensive README.md
+See [PHASE_1_SETUP.md](docs/implementation/PHASE_1_SETUP.md) for details.
 
 ---
 
-## Next Phase: Phase 2 - Core MCP Server Infrastructure
+## Next Phase: Phase 2 - Core Infrastructure
 
-### Overview
+> **IMPORTANT**: Before starting Phase 2, ensure:
+> - ✅ ROS2 Humble or Jazzy installed
+> - ✅ Gazebo Harmonic or Garden installed
+> - ✅ Phase 1 files exist and are committed
 
-Build the foundational MCP server components and ROS2 bridge infrastructure.
+### What You'll Build
 
-### Tasks (0/15 Complete)
+Core MCP server and ROS2 bridge infrastructure that enables AI assistants to communicate with Gazebo.
 
-#### 2.1 Base MCP Server (0/5)
-- [ ] Create `server.py` - main MCP server entry point
-- [ ] Implement server initialization and shutdown
-- [ ] Set up structured logging infrastructure
-- [ ] Create base exception classes
-- [ ] Implement health check mechanism
+### High-Level Tasks (0/15 Complete)
 
-#### 2.2 ROS2 Bridge Node (0/5)
-- [ ] Create `gazebo_bridge_node.py` - ROS2 node
-- [ ] Implement lifecycle management (init, connect, disconnect)
-- [ ] Set up topic publishers/subscribers infrastructure
-- [ ] Create service client infrastructure
-- [ ] Configure QoS settings for reliability
+**Module 2.1: Base Utilities** (5 tasks)
+- Exception handling classes
+- Structured logging system
+- Input validators (coordinates, model names)
+- Message converters (ROS2 ↔ Python)
+- Geometry utilities (quaternions, transformations)
 
-#### 2.3 Connection Manager (0/5)
-- [ ] Create `connection_manager.py` - manages Gazebo connection state
-- [ ] Implement connection state tracking
-- [ ] Add auto-reconnect logic
-- [ ] Create connection status monitoring
-- [ ] Implement timeout and error handling
+**Module 2.2: Connection Manager** (5 tasks)
+- ROS2 node lifecycle management
+- Connection state tracking
+- Auto-reconnect with backoff
+- Health monitoring
+- Error recovery
 
-### Estimated Time
-2-3 days
+**Module 2.3: MCP Server** (5 tasks)
+- Server initialization/shutdown
+- Tool registration system
+- Request validation
+- Response formatting
+- Health check endpoints
 
-### Dependencies
-- Phase 1 complete ✅
-- ROS2 installed on development system
-- Gazebo installed on development system
+### Success Criteria (Verify Before Proceeding)
 
-### Success Criteria
-- [ ] MCP server starts without errors
-- [ ] ROS2 node initializes and connects
-- [ ] Health checks pass
-- [ ] Connection manager handles disconnections gracefully
-- [ ] All unit tests pass
+**CRITICAL**: All must pass before moving to Phase 3:
+
+- [ ] `python -m gazebo_mcp.server` starts without errors
+- [ ] ROS2 node connects: `ros2 node list` shows `gazebo_mcp_bridge`
+- [ ] Health check returns status: Test with MCP client
+- [ ] Connection survives ROS2 restart
+- [ ] Unit tests pass: `pytest tests/ -v --cov=gazebo_mcp`
+
+### Detailed Instructions
+
+See **[PHASE_2_INFRASTRUCTURE.md](docs/implementation/PHASE_2_INFRASTRUCTURE.md)** for:
+- Step-by-step implementation guide
+- Code examples for each task
+- Testing requirements
+- Configuration files
 
 ---
 
@@ -199,38 +199,78 @@ Build the foundational MCP server components and ROS2 bridge infrastructure.
 
 ---
 
-## Development Guidelines
+## Development Workflow (Follow This Pattern)
 
-### Workflow
-1. Review phase document before starting
-2. Create feature branch for each major component
-3. Write tests alongside implementation
-4. Update this plan as tasks are completed
-5. Commit frequently with clear messages
-6. Update phase status and progress percentages
+### Core Feedback Loop: Gather → Act → Verify → Repeat
 
-### Code Quality Standards
-- **Type Hints**: All functions must have type annotations
-- **Docstrings**: All public functions need docstrings
-- **Testing**: Minimum 80% code coverage
-- **Linting**: Must pass `ruff` and `black` checks
-- **Type Checking**: Must pass `mypy` validation
+**IMPORTANT**: Follow this pattern for every task:
 
-### Git Commit Format
+1. **Gather Context**
+   - Read relevant phase document section
+   - Review existing code patterns (if any)
+   - Check related tests and documentation
+   - Understand integration points
+
+2. **Act (Implement)**
+   - Write tests FIRST (TDD approach)
+   - Implement the feature/fix
+   - Follow existing code patterns
+   - Add type hints and docstrings
+
+3. **Verify (Critical Step)**
+   - Run tests: `pytest tests/test_*.py -v`
+   - Check type hints: `mypy src/`
+   - Lint code: `ruff check src/ && black src/`
+   - Manual testing (if applicable)
+   - Update checklist in this plan
+
+4. **Repeat**
+   - If verification fails, iterate
+   - Once passing, commit and move to next task
+   - Don't skip verification steps!
+
+### Code Quality Standards (Non-Negotiable)
+
+**CRITICAL**: All code must meet these standards before committing:
+
+- ✅ **Type Hints**: Every function has full type annotations
+- ✅ **Docstrings**: All public functions/classes documented
+- ✅ **Tests**: >80% coverage, all tests passing
+- ✅ **Linting**: Passes `ruff` and `black` checks
+- ✅ **Type Checking**: Passes `mypy` validation
+
+### Git Workflow
+
+**Branch Naming**:
+```bash
+feature/phase2-connection-manager
+fix/ros2-node-initialization
+test/sensor-data-parsers
+```
+
+**Commit Format**:
 ```
 <type>(<scope>): <subject>
 
-<body>
+<optional body explaining why, not what>
 
-<footer>
+<optional footer>
 ```
 
 **Types**: feat, fix, docs, test, refactor, chore
 
 **Examples**:
-- `feat(server): implement MCP server initialization`
-- `test(bridge): add connection manager tests`
-- `docs(phase2): update implementation progress`
+```
+feat(server): implement MCP server initialization
+
+- Add Server class with start/stop methods
+- Integrate with ConnectionManager
+- Add health check endpoint
+
+test(bridge): add connection manager tests
+
+docs(phase2): mark utilities module complete
+```
 
 ---
 
@@ -278,25 +318,59 @@ Build the foundational MCP server components and ROS2 bridge infrastructure.
 
 ---
 
-## Update Instructions
+## How to Use This Plan
 
-**When starting a new task:**
-1. Move task from `[ ]` to `[x]` in relevant phase section
-2. Update progress percentage
-3. Update file completion tracker if applicable
-4. Add notes to the "Notes & Decisions" section
+### Starting a New Task
 
-**When completing a phase:**
-1. Update phase status in Quick Status Overview
-2. Mark all phase tasks complete
-3. Update milestone tracker
-4. Add completion date
-5. Create git commit: `docs(plan): complete Phase N`
+1. **Read** the phase document section thoroughly
+2. **Understand** what needs to be built and why
+3. **Check** the code example (if provided)
+4. **Implement** following the Gather→Act→Verify loop
+5. **Mark complete**: Change `[ ]` to `[x]` in checklist
+6. **Update** progress percentage
+7. **Commit** with clear message
 
-**When encountering issues:**
-1. Add to Risk Register if significant
-2. Document in Notes & Decisions with date
-3. Update task status or add blockers
+### Completing a Phase
+
+**IMPORTANT**: Don't rush to next phase. Verify everything works!
+
+1. **Verify** all success criteria pass
+2. **Run** full test suite for the phase
+3. **Update** this plan:
+   - Mark phase complete in "At a Glance" table
+   - Update milestone tracker
+   - Add completion date
+4. **Commit**: `docs(plan): complete Phase N`
+5. **Review** next phase document before starting
+
+### When Stuck or Encountering Issues
+
+1. **Document** the issue in "Notes & Decisions" section
+2. **Add** to Risk Register if significant
+3. **Consider**:
+   - Is this a missing context issue? → Read more docs
+   - Is this a tool/library issue? → Check dependencies
+   - Is this a design issue? → Revisit architecture
+4. **Don't** skip verification steps to "make progress"
+5. **Ask** for help or clarification if needed
+
+### Best Practices
+
+**DO** ✅:
+- Read phase documents completely before coding
+- Write tests before implementation (TDD)
+- Verify each task before moving to next
+- Commit frequently with clear messages
+- Update this plan as you progress
+- Take breaks between phases to review
+
+**DON'T** ❌:
+- Skip ahead to "interesting" parts
+- Write code without tests
+- Commit without running verification
+- Let tasks pile up unmarked
+- Ignore failing tests
+- Rush through verification
 
 ---
 
