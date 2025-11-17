@@ -1,9 +1,9 @@
-# Phase 4: Optional Enhancements & Advanced Features
+# Phase 5: Optional Enhancements
 
 **Status**: 🔵 Not Started
 **Estimated Duration**: 3-4 weeks (can be implemented incrementally)
-**Prerequisites**: Phase 4 Core Complete
-**Note**: This is an optional extension to Phase 4. Phase 5 is Testing & Documentation.
+**Prerequisites**: Phase 4 Complete
+**Note**: These are optional enhancements to Phase 4 tools. Can be done before or after Phase 6 (Testing & Documentation).
 
 ---
 
@@ -12,11 +12,11 @@
 **What you'll build**: Optional enhancements to Phase 4 tools, adding advanced features for research, benchmarking, and realistic simulations
 
 **Tasks**: 50+ optional enhancements across 5 modules
-- Module 4.1B: Reproducibility & Benchmarking (8 tasks)
-- Module 4.2B: Extended Material System (12 tasks)
-- Module 4.3B: Environmental Effects (15 tasks)
-- Module 4.4B: Advanced Dynamics (10 tasks)
-- Module 4.5B: Automation & Utilities (8 tasks)
+- Module 5.1: Reproducibility & Benchmarking (8 tasks)
+- Module 5.2: Extended Material System (12 tasks)
+- Module 5.3: Environmental Effects (15 tasks)
+- Module 5.4: Advanced Dynamics (10 tasks)
+- Module 5.5: Automation & Utilities (8 tasks)
 
 **Success criteria**: Enhanced tools provide research-grade reproducibility, realistic environmental conditions, and advanced control while maintaining 100% backward compatibility
 
@@ -34,9 +34,11 @@
 
 ## Overview
 
-These are **optional enhancements** to Phase 4 core tools. They add advanced features but are not required for Phase 4 completion.
+**Phase 5** provides **optional enhancements** to **Phase 4** world generation tools. These add advanced features but are not required for Phase 4 completion.
 
-**Important:** Phase 5 is "Testing, Documentation & Examples" - these optional enhancements can be added before or after Phase 5. All enhancements:
+**Important:** These enhancements extend Phase 4 functionality. You can implement them before or after Phase 6 (Testing & Documentation), or skip them entirely if Phase 4 core features meet your needs.
+
+All enhancements:
 - ✅ Use `Optional[]` type hints
 - ✅ Provide sensible defaults
 - ✅ Maintain 100% backward compatibility
@@ -222,7 +224,7 @@ async def create_benchmark_world(
 
 ---
 
-## Module 4.2B: (Optional) Extended Material System
+## Module 5.2: Extended Material System
 
 **Goal**: Provide realistic material properties for diverse environments
 
@@ -423,7 +425,7 @@ async def set_surface_type(
 
 ---
 
-## Module 4.3B: (Optional) Environmental Effects
+## Module 5.3: Environmental Effects
 
 **Goal**: Simulate weather and atmospheric conditions for sensor testing
 
@@ -593,7 +595,7 @@ async def add_environment_effects(
 
 ---
 
-## Module 4.4B: (Optional) Advanced Dynamics
+## Module 5.4: Advanced Dynamics
 
 **Goal**: Enhanced physics simulation for complex scenarios
 
@@ -707,7 +709,7 @@ async def batch_world_updates(
 
 ---
 
-## Module 4.5B: (Optional) Automation & Utilities
+## Module 5.5: Automation & Utilities
 
 **Goal**: Tools for efficient world management
 
@@ -730,6 +732,8 @@ async def batch_world_updates(
 ## Implementation Strategy
 
 ### Phase 5A: High Priority (Week 1-2)
+
+**Note:** These enhance Phase 4 tools with research-critical features
 
 **Focus:** Research-critical features
 
