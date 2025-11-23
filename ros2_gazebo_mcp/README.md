@@ -307,6 +307,7 @@ ros2_gazebo_mcp/
 
 ## Documentation
 
+- **[API Reference](docs/api/_build/html/index.html)** - Complete API documentation (Sphinx)
 - **[MCP Server Guide](mcp/README.md)** - Complete MCP server documentation
 - **[Usage Examples](examples/README.md)** - 5 practical examples with detailed documentation
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment, Docker, systemd, monitoring
