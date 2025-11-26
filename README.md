@@ -9,7 +9,7 @@ Enable AI assistants like Claude to control Gazebo simulations, spawn robots (Tu
 [![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-blue.svg)](https://docs.ros.org/en/humble/)
 [![Gazebo Harmonic](https://img.shields.io/badge/Gazebo-Harmonic-orange.svg)](https://gazebosim.org/)
 
-## Features
+## Features (Most still planned)
 
 ### Simulation Control
 - Start, stop, pause, and reset Gazebo simulations
@@ -240,7 +240,7 @@ See `mcp/README.md` for detailed tool documentation and examples.
 | `gazebo_get_model_state` | Query model pose and velocity |
 | `gazebo_set_model_state` | Set model pose and/or velocity (teleport or set velocity) |
 
-### Sensor Tools (3 tools)
+### Sensor Tools (3 tools)(UNTESTED YET)
 
 | Tool | Description |
 |------|-------------|
@@ -661,9 +661,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/gazebo-mcp/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/gazebo-mcp/discussions)
-- **Documentation**: [Wiki](https://github.com/yourusername/gazebo-mcp/wiki)
+- **Issues**: [GitHub Issues](https://github.com/kvgork/gazebo-mcp/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kvgork/gazebo-mcp/discussions)
+- **Documentation**: [Wiki](https://github.com/kvgork/gazebo-mcp/wiki)
 
 ## Citation
 
@@ -674,7 +674,7 @@ If you use this project in your research, please cite:
   title = {Gazebo MCP Server: ROS2 Model Context Protocol for Gazebo},
   author = {Gazebo MCP Team},
   year = {2024},
-  url = {https://github.com/yourusername/gazebo-mcp}
+  url = {https://github.com/kvgork/gazebo-mcp}
 }
 ```
 
