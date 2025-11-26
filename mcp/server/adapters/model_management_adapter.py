@@ -32,7 +32,11 @@ def spawn_model_wrapper(
     model_file: str = None,
     model_xml: str = None,
     pose: dict = None,
-    reference_frame: str = "world"
+    reference_frame: str = "world",
+    geometry: str = "box",
+    size: dict = None,
+    color: dict = None,
+    static: bool = True
 ) -> OperationResult:
     """
     Wrapper for spawn_model that converts MCP parameters to function parameters.
@@ -51,6 +55,27 @@ def spawn_model_wrapper(
             pitch = pose["orientation"].get("pitch", 0.0)
             yaw = pose["orientation"].get("yaw", 0.0)
 
+    # Convert size dict to tuple
+    if size is None:
+        size_tuple = (1.0, 1.0, 1.0)
+    else:
+        size_tuple = (
+            size.get("x", 1.0),
+            size.get("y", 1.0),
+            size.get("z", 1.0)
+        )
+
+    # Convert color dict to tuple (RGBA)
+    if color is None:
+        color_tuple = (0.0, 1.0, 0.0, 1.0)  # Green default
+    else:
+        color_tuple = (
+            color.get("r", 0.0),
+            color.get("g", 1.0),
+            color.get("b", 0.0),
+            color.get("a", 1.0)
+        )
+
     # Call the underlying function with the empty world
     return model_management.spawn_model(
         model_name=model_name,
@@ -60,7 +85,11 @@ def spawn_model_wrapper(
         roll=roll,
         pitch=pitch,
         yaw=yaw,
-        world="empty"
+        world="empty",
+        geometry=geometry,
+        size=size_tuple,
+        color=color_tuple,
+        static=static
     )
 
 
@@ -165,6 +194,7 @@ Examples:
 Spawn a new model in Gazebo simulation.
 
 Supports both URDF and SDF model formats. Model can be loaded from file or provided as XML string.
+If no model_file or model_xml is provided, generates a simple geometric model.
 
 Args:
     model_name: Unique name for the model (required)
@@ -172,13 +202,18 @@ Args:
     model_xml: URDF/SDF XML content as string (optional if model_file provided)
     pose: Initial pose dict with position {x, y, z} and orientation {roll, pitch, yaw} (optional)
     reference_frame: Frame for pose, default "world" (optional)
+    geometry: Shape type - "box", "sphere", or "cylinder" (default: "box")
+    size: Dimensions {x, y, z} in meters (default: {x:1, y:1, z:1})
+    color: Color {r, g, b, a} with values 0-1 (default: {r:0, g:1, b:0, a:1} - green)
+    static: If true, model won't be affected by physics (default: true)
 
 Returns operation result with spawn status.
 
 Examples:
+- Spawn green box: gazebo_spawn_model("box1", pose={"position": {"x": 1, "y": 2, "z": 0.5}})
+- Spawn red wall: gazebo_spawn_model("wall1", pose={"position": {"x": 0, "y": 3, "z": 0.5}}, size={"x": 0.2, "y": 4, "z": 1}, color={"r": 0.8, "g": 0.2, "b": 0.2, "a": 1})
+- Spawn blue sphere: gazebo_spawn_model("sphere1", geometry="sphere", size={"x": 0.5, "y": 0.5, "z": 0.5}, color={"r": 0, "g": 0, "b": 1, "a": 1})
 - Spawn from file: gazebo_spawn_model("robot1", model_file="/path/to/robot.urdf")
-- Spawn at position: gazebo_spawn_model("box1", model_file="box.sdf", pose={"position": {"x": 1, "y": 2, "z": 0.5}})
-- Spawn from XML: gazebo_spawn_model("sphere", model_xml="<sdf>...</sdf>")
             """.strip(),
             parameters={
                 "properties": {
@@ -220,6 +255,36 @@ Examples:
                         "type": "string",
                         "description": "Reference frame for pose (default: 'world')",
                         "default": "world"
+                    },
+                    "geometry": {
+                        "type": "string",
+                        "description": "Geometry type: 'box', 'sphere', or 'cylinder' (default: 'box')",
+                        "enum": ["box", "sphere", "cylinder"],
+                        "default": "box"
+                    },
+                    "size": {
+                        "type": "object",
+                        "description": "Dimensions in meters {x, y, z} (default: 1x1x1)",
+                        "properties": {
+                            "x": {"type": "number", "description": "Width (default: 1.0)"},
+                            "y": {"type": "number", "description": "Depth (default: 1.0)"},
+                            "z": {"type": "number", "description": "Height (default: 1.0)"}
+                        }
+                    },
+                    "color": {
+                        "type": "object",
+                        "description": "Color RGBA with values 0-1 (default: green)",
+                        "properties": {
+                            "r": {"type": "number", "description": "Red (0-1, default: 0)"},
+                            "g": {"type": "number", "description": "Green (0-1, default: 1)"},
+                            "b": {"type": "number", "description": "Blue (0-1, default: 0)"},
+                            "a": {"type": "number", "description": "Alpha/opacity (0-1, default: 1)"}
+                        }
+                    },
+                    "static": {
+                        "type": "boolean",
+                        "description": "If true, model won't move due to physics (default: true)",
+                        "default": True
                     }
                 },
                 "required": ["model_name"]

@@ -264,6 +264,10 @@ def spawn_model(
     yaw: float = 0.0,
     namespace: Optional[str] = None,
     world: str = "default",
+    geometry: str = "box",
+    size: tuple = (1.0, 1.0, 1.0),
+    color: tuple = (0.0, 1.0, 0.0, 1.0),
+    static: bool = True,
 ) -> OperationResult:
     """
     Spawn a model in Gazebo simulation.
@@ -307,25 +311,43 @@ def spawn_model(
             bridge = _get_bridge()
 
             # Generate SDF content with proper geometry and materials
-            # Default: 1m green box, static
+            # Build geometry tag based on geometry type
+            size_str = f"{size[0]} {size[1]} {size[2]}"
+
+            if geometry == "box":
+                geometry_tag = f"<box><size>{size_str}</size></box>"
+            elif geometry == "sphere":
+                radius = size[0] / 2.0  # Use first dimension as diameter
+                geometry_tag = f"<sphere><radius>{radius}</radius></sphere>"
+            elif geometry == "cylinder":
+                radius = size[0] / 2.0  # Use first dimension as diameter
+                length = size[2]  # Use Z dimension as length
+                geometry_tag = f"<cylinder><radius>{radius}</radius><length>{length}</length></cylinder>"
+            else:
+                geometry_tag = f"<box><size>{size_str}</size></box>"  # Default to box
+
+            # Build color strings (RGBA)
+            color_str = f"{color[0]} {color[1]} {color[2]} {color[3]}"
+            static_str = "true" if static else "false"
+
             sdf_content = f"""<?xml version='1.0'?>
 <sdf version='1.6'>
   <model name='{model_name}'>
-    <static>true</static>
+    <static>{static_str}</static>
     <link name='link'>
       <pose>0 0 0 0 0 0</pose>
       <visual name='visual'>
         <geometry>
-          <box><size>1 1 1</size></box>
+          {geometry_tag}
         </geometry>
         <material>
-          <ambient>0.0 1.0 0.0 1.0</ambient>
-          <diffuse>0.0 1.0 0.0 1.0</diffuse>
+          <ambient>{color_str}</ambient>
+          <diffuse>{color_str}</diffuse>
         </material>
       </visual>
       <collision name='collision'>
         <geometry>
-          <box><size>1 1 1</size></box>
+          {geometry_tag}
         </geometry>
       </collision>
     </link>
