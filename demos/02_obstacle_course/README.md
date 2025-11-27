@@ -98,7 +98,7 @@ cd demos/02_obstacle_course
 
 **Terminal 4 - MCP Server (for conversational mode only):**
 ```bash
-cd /home/koen/Documents/Personal/code/gazebo-mcp
+cd <path-to-ros2_gazebo_mcp>
 python3 -m mcp.server.server
 ```
 

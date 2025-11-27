@@ -445,7 +445,7 @@ Refactor Demo 2 to use MCP tools instead of direct Python API calls.
 
 1. Start MCP server:
    ```bash
-   cd /home/koen/Documents/Personal/code/gazebo-mcp
+   cd <path-to-ros2_gazebo_mcp>
    python3 -m mcp.server.server
    ```
 

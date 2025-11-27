@@ -134,7 +134,7 @@ All basic integration tests passed successfully! These tests validate the implem
 
 ### Command
 ```bash
-cd /home/koen/Documents/Personal/code/gazebo-mcp
+cd <path-to-ros2_gazebo_mcp>
 python3 -m pytest tests/unit/test_navigation_tools_basic.py -v
 ```
 
@@ -142,7 +142,7 @@ python3 -m pytest tests/unit/test_navigation_tools_basic.py -v
 ```
 ============================= test session starts ==============================
 platform linux -- Python 3.9.13, pytest-8.4.2
-rootdir: /home/koen/Documents/Personal/code/gazebo-mcp
+rootdir: <path-to-ros2_gazebo_mcp>
 configfile: pytest.ini
 collected 35 items
 
@@ -223,7 +223,7 @@ Once you install Nav2 packages with `./install_turtlebot3.sh`, you can run:
 
 **1. Full Integration Tests** (requires Nav2 + Gazebo):
 ```bash
-cd /home/koen/Documents/Personal/code/gazebo-mcp
+cd <path-to-ros2_gazebo_mcp>
 source /opt/ros/humble/setup.bash
 /usr/bin/python3 -m pytest tests/integration/test_navigation_tools.py -v --tb=short
 ```

@@ -37,7 +37,7 @@ This installs:
 
 **Terminal 1 - MCP Server:**
 ```bash
-cd /home/koen/Documents/Personal/code/gazebo-mcp
+cd <path-to-ros2_gazebo_mcp>
 python3 -m mcp.server.server
 ```
 
