@@ -8,6 +8,20 @@ build/
 dist/
 *.so
 
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+*.so
+
 # Testing
 .pytest_cache/
 .coverage
